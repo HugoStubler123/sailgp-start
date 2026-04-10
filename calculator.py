@@ -35,10 +35,8 @@ def parse_local_xml(xml_content: str) -> dict:
     m1x, m1y = latlon_to_xy(M1[0], M1[1], clat, clon)
 
     # Boundary = the start box (race committee may not close the box)
-    box_polygon = [
-        {"name": "SL1", "x": sl1x, "y": sl1y},
-        {"name": "SL2", "x": sl2x, "y": sl2y},
-    ]
+    # Use boundary vertices as-is — do NOT prepend SL1/SL2
+    box_polygon = []
     for v in boundary:
         bx, by = latlon_to_xy(v["lat"], v["lon"], clat, clon)
         box_polygon.append({"name": f"B{v['seq']}", "x": bx, "y": by})
