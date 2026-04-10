@@ -63,17 +63,18 @@ hr{border-color:rgba(0,212,255,.1)!important}
 st.markdown(CSS, unsafe_allow_html=True)
 
 # ── Cached helpers ───────────────────────────────────────────────────────────
+_CACHE_V = 2  # bump to invalidate deployed caches after code changes
 
 @st.cache_resource
 def get_base_polar():
     return Polar()
 
 @st.cache_data(show_spinner=False)
-def cached_fetch(race_id):
+def cached_fetch(race_id, _v=_CACHE_V):
     return fetch_race_geometry(race_id)
 
 @st.cache_data(show_spinner=False)
-def cached_parse_xml(xml_bytes: bytes):
+def cached_parse_xml(xml_bytes: bytes, _v=_CACHE_V):
     return parse_local_xml(xml_bytes.decode("utf-8"))
 
 @st.cache_data(show_spinner=False)
