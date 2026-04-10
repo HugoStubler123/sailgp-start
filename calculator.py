@@ -16,11 +16,11 @@ XML_URL = "http://xml.sailgp.tech/xml"
 def parse_local_xml(xml_content: str) -> dict:
     """
     Parse a single race XML file (drag-and-drop).
-    Builds a synthetic start box (local XMLs only have the race boundary,
-    not the pre/post start-box diff available via the API).
+    Uses the Boundary from the XML as the start box polygon.
     """
     root = ET.fromstring(xml_content)
     marks = _parse_marks(root)
+    boundary = _parse_boundary(root)
 
     for m in ("SL1", "SL2", "M1"):
         if m not in marks:
@@ -34,16 +34,19 @@ def parse_local_xml(xml_content: str) -> dict:
     sl2x, sl2y = latlon_to_xy(SL2[0], SL2[1], clat, clon)
     m1x, m1y = latlon_to_xy(M1[0], M1[1], clat, clon)
 
+    # Boundary = the start box (race committee may not close the box)
+    box_polygon = [
+        {"name": "SL1", "x": sl1x, "y": sl1y},
+        {"name": "SL2", "x": sl2x, "y": sl2y},
+    ]
+    for v in boundary:
+        bx, by = latlon_to_xy(v["lat"], v["lon"], clat, clon)
+        box_polygon.append({"name": f"B{v['seq']}", "x": bx, "y": by})
+
     # TWD reference: bearing from LG1 to WG1
     ref_twd = None
     if "LG1" in marks and "WG1" in marks:
         ref_twd = bearing_ll(*marks["LG1"], *marks["WG1"])
-
-    # Build synthetic start box (the XML boundary is the full race area)
-    twd_for_box = ref_twd if ref_twd is not None else bearing_xy(
-        0.5 * (sl1x + sl2x), 0.5 * (sl1y + sl2y), m1x, m1y)
-    box_polygon = _build_synthetic_box(
-        (sl1x, sl1y), (sl2x, sl2y), twd_for_box)
 
     return {
         "sl1": (sl1x, sl1y), "sl2": (sl2x, sl2y), "m1": (m1x, m1y),
@@ -51,45 +54,6 @@ def parse_local_xml(xml_content: str) -> dict:
         "box_polygon": box_polygon, "center": (clat, clon),
         "ref_twd": ref_twd, "all_marks": marks,
     }
-
-
-def _build_synthetic_box(sl1, sl2, twd, depth_right=500, depth_below=150):
-    """
-    Build a realistic start box when only a single XML is available.
-    In the wind-rotated frame the box is a rectangle:
-      - start line on the left edge (SL1 top, SL2 bottom)
-      - extends *depth_right* m to the right (cross-wind)
-      - extends *depth_below* m below SL2 (downwind / entry zone)
-    Returns the polygon in original coordinates.
-    """
-    sl1r = rotate_xy(*sl1, twd)
-    sl2r = rotate_xy(*sl2, twd)
-
-    # Adaptive sizing based on start-line length
-    sl_len = distance_xy(*sl1, *sl2)
-    dr = max(depth_right, sl_len * 2)
-    db = max(depth_below, sl_len * 0.6)
-
-    right_x = max(sl1r[0], sl2r[0]) + dr
-    bot_y   = min(sl1r[1], sl2r[1]) - db
-    top_y   = max(sl1r[1], sl2r[1])
-
-    # Corners in rotated frame (CW from SL2): BL, BR, TR
-    corners_r = [
-        (min(sl1r[0], sl2r[0]), bot_y),   # BL – below SL2
-        (right_x, bot_y),                  # BR – bottom-right
-        (right_x, top_y),                  # TR – top-right (SL1 level)
-    ]
-
-    box = [
-        {"name": "SL1", "x": sl1[0], "y": sl1[1]},
-        {"name": "SL2", "x": sl2[0], "y": sl2[1]},
-    ]
-    for i, (rx, ry) in enumerate(corners_r):
-        ox, oy = rotate_xy(rx, ry, -twd)
-        box.append({"name": f"B{i+1}", "x": ox, "y": oy})
-
-    return box
 
 
 def bearing_ll(lat1, lon1, lat2, lon2):
