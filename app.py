@@ -241,101 +241,99 @@ def rot(x, y):
     return rotate_xy(x, y, twd)
 
 fig = go.Figure()
-F_MARK, F_SEG, F_TTK, F_DEPTH, F_MISC, PAD = 16, 13, 14, 12, 12, 6
+FS = 15  # font size for labels on chart
+PAD = 5
 
 # Box
 if box:
     bxr = [rot(p["x"], p["y"]) for p in box] + [rot(box[0]["x"], box[0]["y"])]
-    fig.add_trace(go.Scatter(x=[p[0] for p in bxr], y=[p[1] for p in bxr], mode="lines", fill="toself", fillcolor="rgba(22,34,64,0.5)", line=dict(color=BOUNDARY, width=1.5), name="Start box", hoverinfo="skip"))
+    fig.add_trace(go.Scatter(x=[p[0] for p in bxr], y=[p[1] for p in bxr], mode="lines", fill="toself", fillcolor="rgba(22,34,64,0.5)", line=dict(color=BOUNDARY, width=1.5), name="Box", hoverinfo="skip"))
 
 # Start line
 sl1r, sl2r = rot(*sl1), rot(*sl2)
-fig.add_trace(go.Scatter(x=[sl1r[0], sl2r[0]], y=[sl1r[1], sl2r[1]], mode="lines+markers+text", line=dict(color=LINE_RED, width=4), marker=dict(size=12, color=LINE_RED, line=dict(width=2, color="white")), text=["SL1", "SL2"], textposition=["top left", "bottom left"], textfont=dict(size=F_MARK, color=LINE_RED), name="Start line"))
+fig.add_trace(go.Scatter(x=[sl1r[0], sl2r[0]], y=[sl1r[1], sl2r[1]], mode="lines+markers+text", line=dict(color=LINE_RED, width=4), marker=dict(size=12, color=LINE_RED, line=dict(width=2, color="white")), text=["SL1", "SL2"], textposition=["top left", "bottom left"], textfont=dict(size=FS, color=LINE_RED), name="Line"))
 
 # M1
 m1r = rot(*m1)
-fig.add_trace(go.Scatter(x=[m1r[0]], y=[m1r[1]], mode="markers+text", marker=dict(size=16, color=LINE_BLUE, symbol="diamond", line=dict(width=2, color="white")), text=["M1"], textposition="top center", textfont=dict(size=F_MARK, color=LINE_BLUE), name="M1"))
+fig.add_trace(go.Scatter(x=[m1r[0]], y=[m1r[1]], mode="markers+text", marker=dict(size=16, color=LINE_BLUE, symbol="diamond", line=dict(width=2, color="white")), text=["M1"], textposition="top center", textfont=dict(size=FS, color=LINE_BLUE), name="M1"))
 
-# SL->M1
+# SL->M1 dashes (labels near M1 — far from congestion)
 for mr, info in [(sl1r, sl1_m1), (sl2r, sl2_m1)]:
     fig.add_trace(go.Scatter(x=[mr[0], m1r[0]], y=[mr[1], m1r[1]], mode="lines", line=dict(color="rgba(77,171,247,0.25)", width=1.2, dash="dot"), showlegend=False, hoverinfo="skip"))
-    lx, ly = 0.25*mr[0]+0.75*m1r[0], 0.25*mr[1]+0.75*m1r[1]
-    fig.add_annotation(x=lx, y=ly, text=f"<b>{info['twa']}\u00b0</b>  {info['time_s']}s", showarrow=False, bgcolor="rgba(10,22,40,0.9)", bordercolor="rgba(77,171,247,0.3)", borderwidth=1, borderpad=PAD, font=dict(size=F_SEG, color=LINE_BLUE, family="JetBrains Mono"))
+    lx, ly = 0.2*mr[0]+0.8*m1r[0], 0.2*mr[1]+0.8*m1r[1]
+    fig.add_annotation(x=lx, y=ly, text=f"{info['twa']}\u00b0 {info['time_s']}s", showarrow=False, font=dict(size=11, color="rgba(77,171,247,0.6)", family="JetBrains Mono"))
 
 # Fastest point
 fpr = rot(*fastest["point"])
-fig.add_trace(go.Scatter(x=[fpr[0]], y=[fpr[1]], mode="markers+text", marker=dict(size=14, color=ACCENT2, symbol="star-diamond", line=dict(width=1.5, color="white")), text=[f"FP {fastest['time_s']}s"], textposition="top left", textfont=dict(size=F_MARK-2, color=ACCENT2, family="JetBrains Mono"), name="Fastest pt"))
+fig.add_trace(go.Scatter(x=[fpr[0]], y=[fpr[1]], mode="markers", marker=dict(size=12, color=ACCENT2, symbol="star-diamond", line=dict(width=1.5, color="white")), name="FP"))
 
 # Entry
 epr = rot(*ept)
-fig.add_trace(go.Scatter(x=[epr[0]], y=[epr[1]], mode="markers+text", marker=dict(size=10, color=LINE_ORANGE, line=dict(width=1.5, color="white")), text=["Entry"], textposition="bottom left", textfont=dict(size=F_MARK-2, color=LINE_ORANGE), name="Entry"))
+fig.add_trace(go.Scatter(x=[epr[0]], y=[epr[1]], mode="markers+text", marker=dict(size=10, color=LINE_ORANGE, line=dict(width=1.5, color="white")), text=["Entry"], textposition="bottom left", textfont=dict(size=FS-2, color=LINE_ORANGE), name="Entry"))
 
 # d label
-fig.add_shape(type="line", x0=sl2r[0], y0=sl2r[1], x1=epr[0], y1=epr[1], line=dict(color="rgba(255,179,71,0.4)", width=1, dash="dash"))
-fig.add_annotation(x=0.5*(sl2r[0]+epr[0])-25, y=0.5*(sl2r[1]+epr[1]), text=f"<b>d={d_pin}m</b>", showarrow=False, font=dict(size=F_MISC, color=LINE_ORANGE, family="JetBrains Mono"))
+fig.add_shape(type="line", x0=sl2r[0], y0=sl2r[1], x1=epr[0], y1=epr[1], line=dict(color="rgba(255,179,71,0.35)", width=1, dash="dash"))
+fig.add_annotation(x=0.5*(sl2r[0]+epr[0])-20, y=0.5*(sl2r[1]+epr[1]), text=f"d={d_pin}m", showarrow=False, font=dict(size=11, color="rgba(255,179,71,0.7)", family="JetBrains Mono"))
 
 # X
 xr = rot(*xp)
-fig.add_trace(go.Scatter(x=[xr[0]], y=[xr[1]], mode="markers+text", marker=dict(size=18, color=LINE_ORANGE, symbol="diamond-wide", line=dict(width=2.5, color="white")), text=["X"], textposition="top right", textfont=dict(size=F_MARK+2, color=LINE_ORANGE), name="X"))
+fig.add_trace(go.Scatter(x=[xr[0]], y=[xr[1]], mode="markers+text", marker=dict(size=18, color=LINE_ORANGE, symbol="diamond-wide", line=dict(width=2.5, color="white")), text=["X"], textposition="top right", textfont=dict(size=FS+2, color=LINE_ORANGE), name="X"))
 
 # Entry->X
 fig.add_trace(go.Scatter(x=[epr[0], xr[0]], y=[epr[1], xr[1]], mode="lines", line=dict(color=LINE_ORANGE, width=2.5, dash="dash"), showlegend=False))
 fig.add_annotation(x=xr[0], y=xr[1], ax=epr[0], ay=epr[1], xref="x", yref="y", axref="x", ayref="y", showarrow=True, arrowhead=3, arrowsize=1.2, arrowwidth=2.5, arrowcolor=LINE_ORANGE)
-fig.add_annotation(x=0.5*(epr[0]+xr[0]), y=0.5*(epr[1]+xr[1]), text=f"<b>E\u2192X</b>  {seg_e_x['twa']}\u00b0  {seg_e_x['time_s']}s", showarrow=True, ax=0, ay=35, bgcolor="rgba(10,22,40,0.95)", bordercolor="rgba(255,179,71,0.4)", borderwidth=1, borderpad=PAD, font=dict(size=F_SEG, color=LINE_ORANGE, family="JetBrains Mono"))
+fig.add_annotation(x=0.5*(epr[0]+xr[0]), y=0.5*(epr[1]+xr[1]), text=f"{seg_e_x['twa']}\u00b0 {seg_e_x['time_s']}s", showarrow=False, font=dict(size=12, color=LINE_ORANGE, family="JetBrains Mono"), bgcolor="rgba(10,22,40,0.8)", borderpad=3)
 
 # X->targets
-for tr, seg, lbl, clr, ax_px, ay_px in [
-    (sl1r, seg_x_sl1, "SL1", LINE_RED, -100, -20),
-    (fpr, seg_x_fp, "FP", ACCENT2, -100, 0),
-    (sl2r, seg_x_sl2, "SL2", LINE_BLUE, 100, 20),
-]:
+for tr, seg, lbl, clr in [(sl1r, seg_x_sl1, "SL1", LINE_RED), (fpr, seg_x_fp, "FP", ACCENT2), (sl2r, seg_x_sl2, "SL2", LINE_BLUE)]:
     fig.add_trace(go.Scatter(x=[xr[0], tr[0]], y=[xr[1], tr[1]], mode="lines", line=dict(color=clr, width=2.5), showlegend=False))
     fig.add_annotation(x=tr[0], y=tr[1], ax=xr[0], ay=xr[1], xref="x", yref="y", axref="x", ayref="y", showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=2, arrowcolor=clr)
-    lx, ly = 0.25*xr[0]+0.75*tr[0], 0.25*xr[1]+0.75*tr[1]
-    fig.add_annotation(x=lx, y=ly, text=f"<b>\u2192{lbl}</b>  {seg['twa']}\u00b0  {seg['time_s']}s", showarrow=True, ax=ax_px, ay=ay_px, bgcolor="rgba(10,22,40,0.95)", bordercolor=clr, borderwidth=1, borderpad=PAD, font=dict(size=F_SEG, color=clr, family="JetBrains Mono"))
+    mx, my = 0.45*xr[0]+0.55*tr[0], 0.45*xr[1]+0.55*tr[1]
+    fig.add_annotation(x=mx, y=my, text=f"{seg['twa']}\u00b0 {seg['time_s']}s", showarrow=False, font=dict(size=12, color=clr, family="JetBrains Mono"), bgcolor="rgba(10,22,40,0.8)", borderpad=3)
 
-# TTK callout
-ttk_text = f"<span style='color:{LINE_RED}'>\u25cf SL1</span>  TTK <b>{ttk_sl1['ttk']}s</b>  r={ttk_sl1['ratio']}<br><span style='color:{ACCENT2}'>\u25cf FP</span>   TTK <b>{ttk_fp['ttk']}s</b>  r={ttk_fp['ratio']}<br><span style='color:{LINE_BLUE}'>\u25cf SL2</span>  TTK <b>{ttk_sl2['ttk']}s</b>  r={ttk_sl2['ratio']}"
-fig.add_annotation(x=xr[0], y=xr[1], text=ttk_text, showarrow=True, ax=140, ay=90, bgcolor="rgba(10,22,40,0.95)", bordercolor="rgba(255,179,71,0.5)", borderwidth=1, borderpad=10, font=dict(size=F_TTK, color=TEXT_PRI, family="JetBrains Mono"), align="left")
+# TTK callout — the ONE label near X (positioned bottom-right to avoid lines)
+ttk_text = (
+    f"<span style='color:{LINE_RED}'>\u25cf SL1</span>  TTK <b>{ttk_sl1['ttk']}s</b>  r={ttk_sl1['ratio']}<br>"
+    f"<span style='color:{ACCENT2}'>\u25cf FP</span>   TTK <b>{ttk_fp['ttk']}s</b>  r={ttk_fp['ratio']}<br>"
+    f"<span style='color:{LINE_BLUE}'>\u25cf SL2</span>  TTK <b>{ttk_sl2['ttk']}s</b>  r={ttk_sl2['ratio']}")
+fig.add_annotation(x=xr[0], y=xr[1], text=ttk_text, showarrow=True,
+    ax=130, ay=80, bgcolor="rgba(10,22,40,0.95)", bordercolor="rgba(255,179,71,0.5)",
+    borderwidth=1, borderpad=10, font=dict(size=14, color=TEXT_PRI, family="JetBrains Mono"), align="left")
 
-# Depth segments
+# Depth segments (lines only — no label boxes)
 for ds in dsegs:
     sr, er = rot(*ds["start"]), rot(*ds["end"])
-    fig.add_trace(go.Scatter(x=[sr[0], er[0]], y=[sr[1], er[1]], mode="lines", line=dict(color="rgba(255,77,106,0.4)", width=1.5), showlegend=False))
-    fig.add_annotation(x=er[0], y=er[1], ax=sr[0], ay=sr[1], xref="x", yref="y", axref="x", ayref="y", showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=1.5, arrowcolor="rgba(255,77,106,0.4)")
-    y_off = 20 if ds["mark"] == "SL1" else -20
-    fig.add_annotation(x=er[0], y=er[1], text=f"<b>{ds['mark']}</b> {ds['time_s']}s ({ds['distance_m']}m)", showarrow=True, ax=30, ay=y_off, bgcolor="rgba(10,22,40,0.9)", bordercolor="rgba(255,77,106,0.25)", borderwidth=1, borderpad=4, font=dict(size=F_DEPTH, color="rgba(255,77,106,0.8)", family="JetBrains Mono"))
-
-# Entry depth
-if box and edepth > 0:
-    bpr = [rot(p["x"], p["y"]) for p in box]
-    bot_yr = min(p[1] for p in bpr)
-    mid_xr = 0.5*(sl1r[0]+sl2r[0])
-    line_yr = min(sl1r[1], sl2r[1])
-    fig.add_shape(type="line", x0=mid_xr-8, y0=line_yr, x1=mid_xr-8, y1=bot_yr, line=dict(color="rgba(136,153,179,0.3)", width=1, dash="dot"))
-    fig.add_annotation(x=mid_xr-22, y=0.5*(line_yr+bot_yr), text=f"{edepth}m", showarrow=False, textangle=-90, font=dict(size=F_MISC, color=TEXT_SEC, family="JetBrains Mono"))
+    fig.add_trace(go.Scatter(x=[sr[0], er[0]], y=[sr[1], er[1]], mode="lines", line=dict(color="rgba(255,77,106,0.3)", width=1.2), showlegend=False))
+    fig.add_annotation(x=er[0], y=er[1], ax=sr[0], ay=sr[1], xref="x", yref="y", axref="x", ayref="y", showarrow=True, arrowhead=2, arrowsize=0.8, arrowwidth=1, arrowcolor="rgba(255,77,106,0.3)")
 
 # Laylines
 for ll in lls:
     sr, er = rot(*ll["start"]), rot(*ll["end"])
-    fig.add_trace(go.Scatter(x=[sr[0], er[0]], y=[sr[1], er[1]], mode="lines", line=dict(color="rgba(0,212,255,0.25)", width=1.2, dash="dash"), name=ll["label"]))
+    fig.add_trace(go.Scatter(x=[sr[0], er[0]], y=[sr[1], er[1]], mode="lines", line=dict(color="rgba(0,212,255,0.2)", width=1, dash="dash"), showlegend=False))
 
-# Wind arrow
-all_yr = [sl1r[1], sl2r[1], m1r[1], xr[1], epr[1]]
-if box:
-    all_yr += [rot(p["x"], p["y"])[1] for p in box]
-top_y = max(all_yr) + 40
-fig.add_annotation(x=0, y=top_y, ax=0, ay=top_y+60, xref="x", yref="y", axref="x", ayref="y", showarrow=True, arrowhead=2, arrowsize=1.5, arrowwidth=3, arrowcolor=ACCENT)
-fig.add_annotation(x=0, y=top_y+70, text=f"<b>TWD {twd:.0f}\u00b0</b>", showarrow=False, font=dict(size=F_MARK, color=ACCENT, family="JetBrains Mono"))
+# Wind arrow (compact)
+focus_pts = [sl1r, sl2r, xr, epr]
+top_y = max(p[1] for p in focus_pts) + 50
+fig.add_annotation(x=0, y=top_y, ax=0, ay=top_y+45, xref="x", yref="y", axref="x", ayref="y", showarrow=True, arrowhead=2, arrowsize=1.5, arrowwidth=3, arrowcolor=ACCENT)
+fig.add_annotation(x=0, y=top_y+50, text=f"TWD {twd:.0f}\u00b0", showarrow=False, font=dict(size=12, color=ACCENT, family="JetBrains Mono"))
 
-# Bias
+# Bias (next to start line midpoint)
 mid_sl = (0.5*(sl1r[0]+sl2r[0]), 0.5*(sl1r[1]+sl2r[1]))
-fig.add_annotation(x=mid_sl[0]+20, y=mid_sl[1]-20, text=f"\u03b1 = {bias['bias_deg']}\u00b0", showarrow=False, font=dict(size=F_MISC, color=LINE_RED, family="JetBrains Mono"))
+fig.add_annotation(x=mid_sl[0]+15, y=mid_sl[1], text=f"\u03b1={bias['bias_deg']}\u00b0", showarrow=False, font=dict(size=11, color="rgba(255,77,106,0.6)", family="JetBrains Mono"))
+
+# Axis range: zoom on SL1, SL2, Entry, X center — NOT the full boundary
+cx = 0.25*(sl1r[0]+sl2r[0]+xr[0]+epr[0])
+cy = 0.25*(sl1r[1]+sl2r[1]+xr[1]+epr[1])
+# Radius = max distance from center to any of these 4 points + padding
+dists = [max(abs(p[0]-cx), abs(p[1]-cy)) for p in [sl1r, sl2r, xr, epr, m1r, fpr]]
+radius = max(dists) + 120
+x_range = [cx - radius, cx + radius]
+y_range = [cy - radius, cy + radius]
 
 fig.update_layout(
     height=900,
-    xaxis=dict(title=dict(text="Cross-wind (m)", font=dict(size=13, color=TEXT_SEC)), scaleanchor="y", scaleratio=1, showgrid=True, gridcolor=GRID_CLR, zeroline=False, tickfont=dict(size=11, color=TEXT_SEC)),
-    yaxis=dict(title=dict(text="Up-wind (m)", font=dict(size=13, color=TEXT_SEC)), showgrid=True, gridcolor=GRID_CLR, zeroline=False, tickfont=dict(size=11, color=TEXT_SEC)),
+    xaxis=dict(title=dict(text="Cross-wind (m)", font=dict(size=13, color=TEXT_SEC)), scaleanchor="y", scaleratio=1, showgrid=True, gridcolor=GRID_CLR, zeroline=False, tickfont=dict(size=11, color=TEXT_SEC), range=x_range),
+    yaxis=dict(title=dict(text="Up-wind (m)", font=dict(size=13, color=TEXT_SEC)), showgrid=True, gridcolor=GRID_CLR, zeroline=False, tickfont=dict(size=11, color=TEXT_SEC), range=y_range),
     showlegend=False, margin=dict(l=50, r=20, t=20, b=50),
     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=BG_DARK, font=dict(family="Inter, sans-serif"),
 )

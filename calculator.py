@@ -16,7 +16,7 @@ XML_URL = "http://xml.sailgp.tech/xml"
 def parse_local_xml(xml_content: str) -> dict:
     """
     Parse a single race XML file (drag-and-drop).
-    Uses the Boundary from the XML as the start box polygon.
+    The XML Boundary IS the start box (not closed by race committee).
     """
     root = ET.fromstring(xml_content)
     marks = _parse_marks(root)
@@ -34,8 +34,7 @@ def parse_local_xml(xml_content: str) -> dict:
     sl2x, sl2y = latlon_to_xy(SL2[0], SL2[1], clat, clon)
     m1x, m1y = latlon_to_xy(M1[0], M1[1], clat, clon)
 
-    # Boundary = the start box (race committee may not close the box)
-    # Use boundary vertices as-is — do NOT prepend SL1/SL2
+    # Boundary = the start box. Use vertices as-is (standalone polygon).
     box_polygon = []
     for v in boundary:
         bx, by = latlon_to_xy(v["lat"], v["lon"], clat, clon)
@@ -137,9 +136,10 @@ def _parse_marks(root):
     if course is not None:
         for cm in course.findall("CompoundMark"):
             for m in cm.findall("Mark"):
+                name = m.attrib.get("Name")
                 lat, lon = m.attrib.get("TargetLat"), m.attrib.get("TargetLng")
-                if lat and lon:
-                    marks[m.attrib.get("Name")] = (float(lat), float(lon))
+                if lat and lon and name not in marks:
+                    marks[name] = (float(lat), float(lon))
     return marks
 
 
