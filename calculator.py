@@ -123,10 +123,24 @@ def fetch_race_geometry(race_id: str) -> dict:
     for v in pre_bnd:
         v["x"], v["y"] = latlon_to_xy(v["lat"], v["lon"], clat, clon)
     box_polygon = _build_start_box(pre_bnd, post_bnd2, sl1x, sl1y, sl2x, sl2y)
+
+    # Fallback: if no pre/post difference found, use full boundary as box
+    if not box_polygon and pre_bnd:
+        box_polygon = [
+            {"name": f"B{v['seq']}", "x": v["x"], "y": v["y"]}
+            for v in pre_bnd
+        ]
+
+    # TWD reference: bearing from LG1 to WG1
+    ref_twd = None
+    if "LG1" in marks and "WG1" in marks:
+        ref_twd = bearing_ll(*marks["LG1"], *marks["WG1"])
+
     return {
         "sl1": (sl1x, sl1y), "sl2": (sl2x, sl2y), "m1": (m1x, m1y),
         "sl1_ll": SL1, "sl2_ll": SL2, "m1_ll": M1,
         "box_polygon": box_polygon, "center": (clat, clon),
+        "ref_twd": ref_twd, "all_marks": marks,
     }
 
 

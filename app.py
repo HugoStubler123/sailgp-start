@@ -125,7 +125,7 @@ elif load_btn:
         with st.spinner(f"Fetching {race_id}..."):
             st.session_state.geo = cached_fetch(race_id)
             st.session_state.loaded_id = race_id
-            st.session_state.ref_twd = None
+            st.session_state.ref_twd = st.session_state.geo.get("ref_twd")
     except Exception as e:
         st.error(str(e)); st.stop()
 
